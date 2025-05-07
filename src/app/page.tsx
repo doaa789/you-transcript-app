@@ -1,103 +1,76 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [url, setUrl] = useState('')
+  const [transcript, setTranscript] = useState<string[] | null>(null)
+  const [loading, setLoading] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const extractVideoId = (youtubeUrl: string) => {
+    const match = youtubeUrl.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/)
+    return match ? match[1] : null
+  }
+
+  const fetchTranscript = async () => {
+    const id = extractVideoId(url)
+    if (!id) {
+      alert('Invalid link')
+      return
+    }
+    setLoading(true)
+    const res = await fetch(`/api/transcript?videoId=${id}`)
+    const data = await res.json()
+    setTranscript(data.transcript || ['Translation not found.'])
+    setLoading(false)
+  }
+
+  const copyTranscript = () => {
+    if (!transcript) return
+    const text = transcript.join('\n')
+    navigator.clipboard.writeText(text)
+    alert('Translation copied.✅')
+  }
+  
+return (
+
+   <div className="max-w-2xl w-full mx-auto p-6 bg-white rounded-3xl shadow-xl border border-white">
+     <h1 className="text-3xl font-extrabold text-center text-purple-400 mb-6"> 📺 YouTube Transcript Extractor</h1>
+      <input
+        type="text"
+        placeholder="Paste YouTube video link here"
+        className="w-full p-3 text-lg rounded-xl border-2 border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-200 mb-6 transition-all duration-300"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+      />
+    
+    <div className="flex gap-4 mt-4 justify-center">
+      <button
+        onClick={fetchTranscript}
+        className="bg-gradient-to-r from-pink-400 to-blue-400  hover:from-pink-500 hover:to-blue-500 text-white px-6 py-3 rounded-xl text-lg shadow-md transition-all duration-300 flex items-center justify-center gap-2">
+        {loading ? '  Loading...⏳' : '🎬 View Transcript'}
+      </button>
+
+      <button
+        onClick={copyTranscript}
+        className="bg-purple-400 hover:bg-purple-500 text-white px-6 py-3 rounded-xl text-lg shadow-md transition-all duration-300 flex items-center justify-center gap-2"
+      >
+        📋 Copy Transcript
+      </button>
     </div>
-  );
+
+
+      {transcript && (
+        <div className="mt-8 bg-purple-50 p-6 rounded-xl shadow-inner border border-purple-200 space-y-3 max-h-[400px] overflow-y-auto">
+          {transcript.map((line, index) => (
+            <p key={index} className="text-gray-700 text-lg leading-relaxed">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+     )
+
+  
 }
